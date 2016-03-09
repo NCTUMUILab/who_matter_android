@@ -1,6 +1,7 @@
 package com.canking.notifymrg;
 
 import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +15,7 @@ public class NLService extends NotificationListenerService {
     public final static String COMMAND_EXTRA = "command";
     public final static String CANCEL_ALL = "clearall";
     public final static String GET_LIST = "list";
+    public final static String WEIXIN = "com.tencent.mm";
 
     private String TAG = "NLService";
     private NLServiceReceiver nlservicereciver;
@@ -44,6 +46,23 @@ public class NLService extends NotificationListenerService {
         i.putExtra(MainActivity.VIEW_S, notification.contentView);
         i.putExtra(MainActivity.View_L, notification.bigContentView);
         sendBroadcast(i);
+
+        onBounReveive(sbn);
+    }
+
+    private void onBounReveive(StatusBarNotification sbn) {
+        Notification notification = sbn.getNotification();
+        String pkg = sbn.getPackageName();
+        if (!pkg.equals(WEIXIN)) return;
+
+        String content = notification.extras.getString(Notification.EXTRA_TEXT);
+        if (content.contains("[微信红包]")) {
+            final PendingIntent pendingIntent = notification.contentIntent;
+            try {
+                pendingIntent.send();
+            } catch (PendingIntent.CanceledException e) {
+            }
+        }
     }
 
     @Override
@@ -85,7 +104,6 @@ public class NLService extends NotificationListenerService {
 
         }
     }
-
 
 
 }

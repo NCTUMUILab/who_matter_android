@@ -26,6 +26,13 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!--<service android:name=".NLAccessibilityService">-->
+            <!--<intent-filter>-->
+                <!--<action android:name="android.accessibilityservice.AccessibilityService" />-->
+            <!--</intent-filter>-->
+        <!--</service>-->
+        <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
     </application>
 
 </manifest>
