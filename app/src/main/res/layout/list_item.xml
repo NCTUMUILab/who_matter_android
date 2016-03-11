@@ -32,12 +32,14 @@
     <ImageView
         android:id="@+id/noti_small_icon"
         android:layout_width="48dp"
-        android:layout_height="48dp" />
+        android:layout_height="48dp"
+        android:background="#88cccc" />
 
     <ImageView
         android:id="@+id/noti_large_icon"
         android:layout_width="64dp"
-        android:layout_height="64dp" />
+        android:layout_height="64dp"
+        android:background="#88cccc" />
 
     <FrameLayout
         android:id="@+id/noti_content_view"

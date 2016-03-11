@@ -25,7 +25,6 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -156,8 +155,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             viewHolder.notiTitel.setText(bean.title);
             viewHolder.notiSubText.setText(bean.subText);
             viewHolder.notiText.setText(bean.text);
-            viewHolder.smallIcon.setImageBitmap(bean.smallIcon);
             viewHolder.largeIcon.setImageBitmap(bean.largeIcon);
+            viewHolder.smallIcon.setImageIcon(bean.smallIcon);//high api level
             viewHolder.contentView.removeAllViews();
             viewHolder.bigContentView.removeAllViews();
 
@@ -200,23 +199,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             bean.subText = budle.getString(Notification.EXTRA_SUB_TEXT);
             bean.largeIcon = budle.getParcelable(Notification.EXTRA_LARGE_ICON);
             Icon icon = budle.getParcelable(Notification.EXTRA_SMALL_ICON);
+            bean.smallIcon = icon;
 
             bean.viewS = budle.getParcelable(VIEW_S);
             bean.viewL = budle.getParcelable(View_L);
-            try {
-                if (icon != null) {
-                    Class classType = icon.getClass();
-                    Object invokertester = classType.newInstance();
-                    Method addMethod = classType.getMethod("getBitmap");
-                    Object result = addMethod.invoke(invokertester);
-                    Bitmap bit = (Bitmap) result;
-                    bean.smallIcon = bit;
-                }
-            } catch (Exception e) {
-                Toast.makeText(MainActivity.this, "null" + e.getMessage(), Toast.LENGTH_LONG).show();
-                e.printStackTrace();
-            }
-
 
             mInfoList.add(bean);
             Log.e("changxing", "receive:" + temp + "\n" + budle);
@@ -230,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String title;
         String text;
         String subText;
-        Bitmap smallIcon;
+        Icon smallIcon;
         Bitmap largeIcon;
         RemoteViews viewS, viewL;
     }
