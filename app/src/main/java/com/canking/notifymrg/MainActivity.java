@@ -19,14 +19,23 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.telephony.TelephonyManager;
+import android.content.SharedPreferences;
+
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
+import org.json.JSONObject;
+import org.json.JSONException;
+
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String ENABLED_NOTIFICATION_LISTENERS = "enabled_notification_listeners";
@@ -37,34 +46,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     final static String VIEW_S = "view_small";
     final static String View_L = "view_large";
 
-    private TextView mInfoTex;
     private NotificationReceiver nReceiver;
-    private Button mStart, mStop, mClearAll, mNowList;
-    private ListView mListView;
-    private List<NTBean> mInfoList;
-    private InfoListAdapter mAdapter;
+    private Button mStart, mStop, mSaveName;
+    private SharedPreferences sharedPreferences;
+    private EditText mName;
+    private TextView mCurrentName;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        sharedPreferences = getSharedPreferences("data" , MODE_PRIVATE);
         initView();
         initData();
+
     }
 
     private void initView() {
         mStart = (Button) findViewById(R.id.start);
         mStop = (Button) findViewById(R.id.stop);
-        mClearAll = (Button) findViewById(R.id.clear_all);
-        mInfoTex = (TextView) findViewById(R.id.info);
-        mListView = (ListView) findViewById(R.id.list);
-        mNowList = (Button) findViewById(R.id.now_list);
+        mName   = (EditText) findViewById(R.id.name);
+        mSaveName = (Button) findViewById(R.id.save_name);
+        mCurrentName = (TextView) findViewById(R.id.current_name);
 
-        mNowList.setOnClickListener(this);
+        String name = sharedPreferences.getString("name", null);
+        mName.setText(name);
+        mCurrentName.setText(name);
+
         mStop.setOnClickListener(this);
-        mClearAll.setOnClickListener(this);
         mStart.setOnClickListener(this);
+        mSaveName.setOnClickListener(this);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -75,10 +88,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         IntentFilter filter = new IntentFilter();
         filter.addAction(UPDATE);
         registerReceiver(nReceiver, filter);
-
-        mInfoList = new ArrayList<>();
-        mAdapter = new InfoListAdapter(this, mInfoList);
-        mListView.setAdapter(mAdapter);
     }
 
     @Override
@@ -88,20 +97,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
                 startActivity(intent);
             } else {
-                Toast.makeText(this, "已开启服务权限", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Start retrieve notification", Toast.LENGTH_LONG).show();
             }
         } else if (v == mStop) {
             Intent s = new Intent(this, NLService.class);
             stopService(s);
-        } else if (v == mClearAll) {
-            Intent i1 = new Intent(NLService.COMMAND);
-            i1.putExtra(NLService.COMMAND_EXTRA, NLService.CANCEL_ALL);
-            sendBroadcast(i1);
-        } else if (v == mNowList) {
-            Intent i1 = new Intent(NLService.COMMAND);
-            i1.putExtra(NLService.COMMAND_EXTRA, NLService.GET_LIST);
-            sendBroadcast(i1);
-            v.setEnabled(false);
+        } else if (v == mSaveName) {
+            String name = mName.getText().toString();
+            sharedPreferences.edit().putString("name", name).apply();
+            mCurrentName.setText(name);
+            Toast.makeText(this, "Name Set", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -111,114 +116,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         unregisterReceiver(nReceiver);
     }
 
-    public class InfoListAdapter extends BaseAdapter {
-        private List<NTBean> nInfoList;
-        private LayoutInflater nInflater;
-        private Context nContext;
-
-        public InfoListAdapter(Context cxt, List<NTBean> source) {
-            nInfoList = source;
-            nInflater = LayoutInflater.from(cxt);
-            nContext = cxt;
-        }
-
-        @Override
-        public int getCount() {
-            return nInfoList.size();
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return nInfoList.get(position);
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            ViewHolder viewHolder;
-            if (convertView == null) {
-                convertView = nInflater.inflate(R.layout.list_item, parent, false);
-                viewHolder = new ViewHolder();
-                viewHolder.title = (TextView) convertView.findViewById(R.id.title);
-                viewHolder.notiTitel = (TextView) convertView.findViewById(R.id.noti_title);
-                viewHolder.notiText = (TextView) convertView.findViewById(R.id.noti_text);
-                viewHolder.notiSubText = (TextView) convertView.findViewById(R.id.noti_sub_text);
-                viewHolder.smallIcon = (ImageView) convertView.findViewById(R.id.noti_small_icon);
-                viewHolder.largeIcon = (ImageView) convertView.findViewById(R.id.noti_large_icon);
-                viewHolder.contentView = (ViewGroup) convertView.findViewById(R.id.noti_content_view);
-                viewHolder.bigContentView = (ViewGroup) convertView.findViewById(R.id.noti_bit_content_view);
-                convertView.setTag(viewHolder);
-            } else {
-                viewHolder = (ViewHolder) convertView.getTag();
-            }
-            NTBean bean = nInfoList.get(position);
-            viewHolder.title.setText(bean.info);
-            viewHolder.notiTitel.setText(bean.title);
-            viewHolder.notiSubText.setText(bean.subText);
-            viewHolder.notiText.setText(bean.text);
-            viewHolder.largeIcon.setImageBitmap(bean.largeIcon);
-            viewHolder.smallIcon.setImageIcon(bean.smallIcon);//high api level
-            viewHolder.contentView.removeAllViews();
-            viewHolder.bigContentView.removeAllViews();
-
-            if (bean.viewS != null) {
-                View view = bean.viewS.apply(nContext, viewHolder.contentView);
-                viewHolder.contentView.addView(view);
-            }
-            if (bean.viewL != null) {
-                View view = bean.viewL.apply(nContext, viewHolder.bigContentView);
-                viewHolder.bigContentView.addView(view);
-            }
-            return convertView;
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-    }
-
-    public static class ViewHolder {
-        public TextView title, notiTitel, notiText, notiSubText;
-        public ImageView smallIcon, largeIcon;
-        public ViewGroup contentView, bigContentView;
-    }
 
     class NotificationReceiver extends BroadcastReceiver {
 
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            String temp = mInfoList.size() + "：" + intent.getStringExtra(EVENT);
-            NTBean bean = new NTBean();
-            bean.info = temp;
-
             Bundle budle = intent.getExtras();
-            bean.title = budle.getString(Notification.EXTRA_TITLE);
-            bean.text = budle.getString(Notification.EXTRA_TEXT);
-            bean.subText = budle.getString(Notification.EXTRA_SUB_TEXT);
-            bean.largeIcon = budle.getParcelable(Notification.EXTRA_LARGE_ICON);
-            Icon icon = budle.getParcelable(Notification.EXTRA_SMALL_ICON);
-            bean.smallIcon = icon;
+            JSONObject notification_json = new JSONObject();
+            Set<String> keys = budle.keySet();
+            for (String key : keys) {
+                try {
+                    notification_json.put(key, budle.get(key));
+                } catch(JSONException e) {
+                }
+            }
+            try {
+                notification_json.put("name", sharedPreferences.getString("name" , "null"));
+            } catch (JSONException e) {
 
-            bean.viewS = budle.getParcelable(VIEW_S);
-            bean.viewL = budle.getParcelable(View_L);
+            }
 
-            mInfoList.add(bean);
-            Log.e("changxing", "receive:" + temp + "\n" + budle);
-            mAdapter.notifyDataSetChanged();
+            Log.e("json", notification_json.toString());
+
         }
 
-    }
-
-    class NTBean {
-        String info;
-        String title;
-        String text;
-        String subText;
-        Icon smallIcon;
-        Bitmap largeIcon;
-        RemoteViews viewS, viewL;
     }
 
     private boolean isEnabled() {

@@ -22,7 +22,8 @@
     </android.support.design.widget.AppBarLayout>
 
 
-    <include layout="@layout/content_main" />
+    <include layout="@layout/content_main"
+        android:id="@+id/include" />
 
     <TextView
         android:id="@+id/info"
@@ -33,7 +34,7 @@
         android:paddingBottom="4dp"
         android:paddingLeft="16dp"
         android:paddingTop="4dp"
-        android:text="通知栏管理"
+        android:text="設定"
         android:textColor="@color/colorPrimary"
         android:textSize="18sp" />
 
