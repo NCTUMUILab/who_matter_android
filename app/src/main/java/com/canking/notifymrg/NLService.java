@@ -96,7 +96,6 @@ public class NLService extends NotificationListenerService {
                     i2.putExtras(notification.extras);
                     i2.putExtra(MainActivity.VIEW_S, notification.contentView);
                     i2.putExtra(MainActivity.View_L, notification.bigContentView);
-
                     sendBroadcast(i2);
                     i++;
                 }
