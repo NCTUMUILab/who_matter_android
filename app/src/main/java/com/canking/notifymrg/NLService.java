@@ -9,13 +9,16 @@ import android.content.IntentFilter;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
+import android.os.Build;
+import android.os.Bundle;
+
+
 
 public class NLService extends NotificationListenerService {
     public final static String COMMAND = "com.canking.COMMAND_NOTIFICATION_LISTENER_SERVICE";
     public final static String COMMAND_EXTRA = "command";
     public final static String CANCEL_ALL = "clearall";
     public final static String GET_LIST = "list";
-    public final static String WEIXIN = "com.tencent.mm";
 
     private String TAG = "NLService";
     private NLServiceReceiver nlservicereciver;
@@ -32,7 +35,7 @@ public class NLService extends NotificationListenerService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(nlservicereciver);
+//        unregisterReceiver(nlservicereciver);
     }
 
     @Override
@@ -41,40 +44,45 @@ public class NLService extends NotificationListenerService {
 
         Notification notification = sbn.getNotification();
         Intent i = new Intent(MainActivity.UPDATE);
-        i.putExtra(MainActivity.EVENT, "接受 :" + sbn.getPackageName() + "\n");
-        i.putExtras(notification.extras);
-        i.putExtra(MainActivity.VIEW_S, notification.contentView);
-        i.putExtra(MainActivity.View_L, notification.bigContentView);
-        sendBroadcast(i);
+        i.putExtra("event", "posted");
+        i.putExtra("app", sbn.getPackageName());
+        try {
+            i.putExtra("title", notification.extras.get("android.title").toString());
+        } catch (Exception e){
+            i.putExtra("title", "");
+        }
+        try {
+            i.putExtra("text", notification.extras.get("android.text").toString());
+        } catch (Exception e){
+            i.putExtra("text", "");
+        }
 
+        sendBroadcast(i);
         onBounReveive(sbn);
     }
 
     private void onBounReveive(StatusBarNotification sbn) {
         Notification notification = sbn.getNotification();
         String pkg = sbn.getPackageName();
-        if (!pkg.equals(WEIXIN)) return;
-
-        String content = notification.extras.getString(Notification.EXTRA_TEXT);
-        if (content.contains("[微信红包]")) {
-            final PendingIntent pendingIntent = notification.contentIntent;
-            try {
-                pendingIntent.send();
-            } catch (PendingIntent.CanceledException e) {
-            }
-        }
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
         Log.i(TAG, "ID :" + sbn.getId() + "\t" + sbn.getNotification().tickerText + "\t" + sbn.getPackageName());
         Intent i = new Intent(MainActivity.UPDATE);
-        i.putExtra(MainActivity.EVENT, "移除 :" + sbn.getPackageName() + "\n");
         Notification notification = sbn.getNotification();
-        i.putExtras(notification.extras);
-        i.putExtra(MainActivity.VIEW_S, notification.contentView);
-        i.putExtra(MainActivity.View_L, notification.bigContentView);
-
+        i.putExtra("event", "removed");
+        i.putExtra("app", sbn.getPackageName());
+        try {
+            i.putExtra("title", notification.extras.get("android.title").toString());
+        } catch (Exception e){
+            i.putExtra("title", "");
+        }
+        try {
+            i.putExtra("text", notification.extras.get("android.text").toString());
+        } catch (Exception e){
+            i.putExtra("text", "");
+        }
         sendBroadcast(i);
     }
 

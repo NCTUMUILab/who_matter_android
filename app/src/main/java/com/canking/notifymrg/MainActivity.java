@@ -1,5 +1,6 @@
 package com.canking.notifymrg;
 
+import android.os.Build;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -42,6 +43,14 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Headers;
 
+import com.ubhave.datahandler.ESDataManager;
+import com.ubhave.datahandler.except.DataHandlerException;
+import com.ubhave.datahandler.loggertypes.AbstractDataLogger;
+import com.ubhave.datahandler.transfer.DataUploadCallback;
+import com.ubhave.sensormanager.ESSensorManager;
+import com.ubhave.sensormanager.data.SensorData;
+import com.ubhave.sensormanager.sensors.SensorUtils;
+
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String ENABLED_NOTIFICATION_LISTENERS = "enabled_notification_listeners";
@@ -53,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     final static String View_L = "view_large";
 
     private NotificationReceiver nReceiver;
-    private Button mStart, mStop, mSaveName, mConnectLine;
+    private Button mStart, mStop, mSaveName, mConnectLine, mForm;
     private SharedPreferences sharedPreferences;
     private EditText mName;
     private TextView mCurrentName;
@@ -106,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mCurrentName = (TextView) findViewById(R.id.current_name);
         mCurrentUUID = (TextView) findViewById(R.id.uuid);
         mConnectLine = (Button) findViewById(R.id.connect_line);
+        mForm = (Button) findViewById(R.id.form);
 
         name = sharedPreferences.getString("name", null);
         uuid = sharedPreferences.getString("uuid", null);
@@ -125,6 +135,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mStart.setOnClickListener(this);
         mSaveName.setOnClickListener(this);
         mConnectLine.setOnClickListener(this);
+        mForm.setOnClickListener(this);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -155,7 +166,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mCurrentName.setText(name);
             Toast.makeText(this, "Name Set", Toast.LENGTH_LONG).show();
         } else if (v == mConnectLine) {
-            String url = String.format("https://notify-bot.line.me/oauth/authorize?response_type=code&client_id=DaVZq9zBmUGSlS4e9nLdkN&redirect_uri=http://mini.kevin.nctu.me:5555/line/callback/?uuid=%s&scope=notify&state=NO_STATE&test=gg", uuid, name);
+            String url = String.format("https://notify-bot.line.me/oauth/authorize?response_type=code&client_id=DaVZq9zBmUGSlS4e9nLdkN&redirect_uri=https://who.nctu.me/line/callback/?uuid=%s&scope=notify&state=NO_STATE", uuid);
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setData(Uri.parse(url));
+            startActivity(i);
+        }else if (v == mForm) {
+            String url = String.format("https://who.nctu.me/notification/%s/", uuid);
             Intent i = new Intent(Intent.ACTION_VIEW);
             i.setData(Uri.parse(url));
             startActivity(i);
@@ -165,13 +181,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(nReceiver);
+//        unregisterReceiver(nReceiver);
     }
 
 
     class NotificationReceiver extends BroadcastReceiver {
-
-
         @Override
         public void onReceive(Context context, Intent intent) {
             Bundle budle = intent.getExtras();
@@ -194,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
 
             String json = notification_json.toString();
+            Log.e("json", json);
 
             try{
                 post_result(json);
@@ -246,7 +261,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void post_result(String data) throws Exception {
         RequestBody body = RequestBody.create(JSON, data);
         Request request = new Request.Builder()
-                .url("http://mini.kevin.nctu.me:5555/result/")
+                .url("https://who.nctu.me/result/")
                 .post(body)
                 .build();
 
